@@ -318,19 +318,41 @@
   let history = JSON.parse(localStorage.getItem('syl_history') || '[]');
 
   function splitSyllables(word) {
-    const vowels = "aeiouAEIOU";
+    word = word.toLowerCase();
+    function isVowel(ch, pos) {
+      return "aeiou".includes(ch) || (ch === 'y' && pos > 0);
+    }
     let syllables = [];
     let current = "";
-    for (let i = 0; i < word.length; i++) {
+    let i = 0;
+    const n = word.length;
+    while (i < n) {
       const char = word[i];
       current += char;
-      if (vowels.includes(char)) {
-        if (i + 2 < word.length && !vowels.includes(word[i+1]) && vowels.includes(word[i+2])) {
-          syllables.push(current); current = "";
-        } else if (i + 1 < word.length && vowels.includes(word[i+1])) {
-          syllables.push(current); current = "";
+      if (isVowel(char, i)) {
+        let j = i + 1;
+        let consonants = [];
+        while (j < n && !isVowel(word[j], j)) {
+          consonants.push(word[j]);
+          j++;
+        }
+        const hasNextVowel = j < n;
+        if (hasNextVowel) {
+          const nc = consonants.length;
+          if (nc === 0) {
+            syllables.push(current); current = "";
+          } else if (nc === 1) {
+            syllables.push(current); current = "";
+          } else {
+            const keep = Math.floor(nc / 2);
+            current += consonants.slice(0, keep).join("");
+            syllables.push(current);
+            current = consonants.slice(keep).join("");
+            i = j - 1;
+          }
         }
       }
+      i++;
     }
     if (current) syllables.push(current);
     return syllables;
